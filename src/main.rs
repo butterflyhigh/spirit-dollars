@@ -5,7 +5,6 @@ use std::sync::Arc;
 use database::Database;
 use dotenv;
 
-use proxie::tokio::AsyncProxy;
 use serenity::all::{CreateInteractionResponse, CreateInteractionResponseMessage};
 use serenity::async_trait;
 use serenity::gateway::ShardManager;
@@ -13,7 +12,6 @@ use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 use serenity::model::application::{Command, Interaction};
 
-use proxie::SOCKS5Proxy;
 
 mod database;
 mod commands;
@@ -77,7 +75,7 @@ impl EventHandler for Handler {
 
         Command::set_global_commands(&ctx.http, commands::get_commands()).await.unwrap();
 
-        println!("Registered commands: {:?}", Command::get_global_commands(&ctx.http).await);
+        println!("Registered commands: {:#?}", Command::get_global_commands(&ctx.http).await);
     }
 }
 
@@ -115,5 +113,7 @@ async fn main() {
         shard_manager.shutdown_all().await;
     });
 
-    client.start().await.unwrap();
+    if let Err(why) = client.start().await {
+        println!("Client error: {why:?}");
+    }
 }

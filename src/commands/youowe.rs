@@ -19,7 +19,7 @@ pub async fn run(options: &[ResolvedOption<'_>], interaction: &CommandInteractio
 
 pub fn register() -> CreateCommand {
     CreateCommand::new("youowe")
-        .description("\"politely\" remind someone they owe you spirit dollars (doesn't actually record anything in the database)")
+        .description("\"politely\" remind someone they owe you spirit dollars (doesn't change the database)")
         .add_option(
             CreateCommandOption::new(CommandOptionType::User, "user", "The user who's scamming you out of your spirit dollars")
                 .required(true),
