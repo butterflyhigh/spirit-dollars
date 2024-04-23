@@ -4,7 +4,7 @@ use std::{env, fs};
 use std::sync::Arc;
 use database::Database;
 use dotenv;
-
+use std::path;
 use serenity::all::{CreateInteractionResponse, CreateInteractionResponseMessage};
 use serenity::async_trait;
 use serenity::gateway::ShardManager;
@@ -16,7 +16,8 @@ use serenity::model::application::{Command, Interaction};
 mod database;
 mod commands;
 
-const PATH: &str = "./testdata";
+const DATA_SUBDIR: &str = "data";
+const DB_FILE: &str = "data.json";
 
 pub struct ShardManagerContainer;
 
@@ -84,20 +85,27 @@ async fn main() {
     dotenv::dotenv().unwrap();
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
+    let bnding  path:Path::ew(DAT_SUBDI)
+        .join(DB_FILE);
+    let path = binding
+        .as_os_str()
+        .to_str()
+        .unwrap();
+
     let mut client = Client::builder(token, GatewayIntents::empty())
         .event_handler(Handler)
         .await
         .expect("Error creating client");
 
-    let db = match fs::read(PATH) {
+    let db = match fs::read(path) {
         Ok(_) => {
             println!("Opening db");
-            database::open_database(PATH).unwrap()
+            database::open_database(path).unwrap()
         }
 
         Err(_) => {
             println!("Creating db");
-            database::create_database(PATH).unwrap()
+            database::create_database(path).unwrap()
         }
     };
     db.sync().unwrap();
