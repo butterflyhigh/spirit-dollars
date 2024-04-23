@@ -85,7 +85,7 @@ async fn main() {
     dotenv::dotenv().unwrap();
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
-    let bnding  path:Path::ew(DAT_SUBDI)
+    let binding = path::Path::new(DATA_SUBDIR)
         .join(DB_FILE);
     let path = binding
         .as_os_str()
