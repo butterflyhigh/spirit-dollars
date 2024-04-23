@@ -26,5 +26,6 @@ pub fn register() -> CreateCommand {
         )
         .add_option(
             CreateCommandOption::new(CommandOptionType::Number, "amount", "How much they owe you")
+                .required(true)
         )
 }
