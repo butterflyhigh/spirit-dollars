@@ -75,7 +75,7 @@ impl EventHandler for Handler {
 
         Command::set_global_commands(&ctx.http, commands::get_commands()).await.unwrap();
 
-        println!("Registered commands: {:#?}", Command::get_global_commands(&ctx.http).await);
+        //println!("Registered commands: {:#?}", Command::get_global_commands(&ctx.http).await);
     }
 }
 
@@ -100,6 +100,7 @@ async fn main() {
             database::create_database(PATH).unwrap()
         }
     };
+    db.sync().unwrap();
 
     {
         let mut data = client.data.write().await;

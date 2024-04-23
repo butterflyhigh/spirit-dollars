@@ -16,10 +16,10 @@ pub async fn run(ctx: &Context, options: &[ResolvedOption<'_>], interaction: &Co
         ..
     }) = amount {
         let id = Id(user.id.to_string());
-        let dollas = amt.round() as usize;
+        let dollas = amt;
         let sender_id = Id(interaction.user.id.to_string());
 
-        let debt = database::Debt::new(id, dollas);
+        let debt = database::Debt::new(id, *dollas);
         let data = ctx.data.read().await;
         let db = data.get::<GlobalDatabase>().unwrap();
 
@@ -32,7 +32,7 @@ pub async fn run(ctx: &Context, options: &[ResolvedOption<'_>], interaction: &Co
             Err(e) => format!("Error: {}", e),
         }
     } else {
-        String::from("Something no worky")
+        String::from("Something bad happened")
     }
 }
 

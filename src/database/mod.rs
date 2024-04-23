@@ -1,4 +1,4 @@
-use std::{fs::{self, File}, io::Write, ops::Add, sync::{Arc, Mutex, PoisonError}};
+use std::{fs::{self, File}, io::{Seek, Write}, ops::Add, sync::{Arc, Mutex, PoisonError}};
 use serde::{Deserialize, Serialize};
 
 // i was posessed by the holy spirit and wrote this goofy ahh code
@@ -26,7 +26,7 @@ struct User {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Debt {
     owed_to: Id,
-    amount: usize
+    amount: f64
 }
 
 impl Database {
@@ -34,6 +34,8 @@ impl Database {
         match self.file.lock() {
             Ok(mut lock) => {
                 let data = self.data.lock().unwrap().clone();
+                lock.set_len(0)?;
+                lock.rewind()?;
                 lock.write(serde_json::to_string(&data).unwrap().as_bytes())?;
             }
             Err(e) => {
@@ -41,10 +43,23 @@ impl Database {
             }
         }
 
+        match self.data.lock() {
+            Ok(mut lock) => {
+                lock.users.sort_by_key(|user| user.id.clone().0);
+
+                lock.users.iter_mut().for_each(|user| {
+                    user.debts.sort_by_key(|debt| debt.owed_to.clone().0);
+                });
+            }
+            Err(e) => {
+                panic!("{e}");
+            }
+        }
+
         Ok(())
     }
 
-    pub fn get_amount(&self, user_id: &Id, owed_to: &Id) -> Result<usize, usize> {
+    pub fn get_amount(&self, user_id: &Id, owed_to: &Id) -> Result<f64, usize> {
         let lock = self.data.lock().unwrap();
         let user_index = lock.users.binary_search_by_key(&user_id.0, |user| user.id.clone().0)?;
         let debt_index = lock.users[user_index].debts.binary_search_by_key(&owed_to.0, |owed| owed.owed_to.clone().0)?;
@@ -62,13 +77,14 @@ impl Database {
                     Ok(i) => {
                         let (j, added_debt) = match lock.users[i].debts.binary_search_by_key(&new_debt.owed_to.0, |debt| debt.owed_to.0.clone()) {
                             Ok(j) => { (j, lock.users[i].debts[i].to_owned() + new_debt.to_owned()) }, // call me lucia bc im making spaghetti
-                            Err(j) => { (j, new_debt.to_owned()) },
+                            Err(j) => { println!("WARNING: Did not find debt entry"); (j, new_debt.to_owned()) },
                         };
 
                         lock.users[i].debts[j] = added_debt;
                         println!("1");
                     },
                     Err(i) => {
+                        println!("WARNING: Did not find user entry");
                         lock.users.insert(i, User {
                             id: user_id.to_owned(), debts: vec![new_debt.to_owned()]
                         });
@@ -81,6 +97,9 @@ impl Database {
             }
         }
 
+        println!("{:#?}", self.data);
+        self.sync().unwrap();
+        println!("{:#?}", self.data);
         Ok(())
     }
 
@@ -95,7 +114,7 @@ impl Data {
 }
 
 impl Debt {
-    pub fn new(owed_to: Id, amount: usize) -> Self {
+    pub fn new(owed_to: Id, amount: f64) -> Self {
         Self {
             owed_to,
             amount
@@ -129,11 +148,16 @@ pub fn open_database(path: &str) -> Result<Database, std::io::Error> {
     let data_str = fs::read_to_string(path)?;
     println!("{}", data_str);
     let data: Data = match serde_json::from_str(&data_str) {
-        Ok(data) => data,
-        Err(_) => {
+        Ok(data) => {
+            println!("Success serializing data");
+            data
+        },
+        Err(e) => {
+            eprintln!("ERROR: {e}");
             Data::new()
         }
     };
+    println!("{:#?}", data);
     let file = fs::File::create(path)?;
     let db = Database {
         file: Arc::new(Mutex::new(file)),
